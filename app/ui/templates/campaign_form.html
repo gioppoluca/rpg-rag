@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% set title = "New campaign" if mode == 'create' else "Edit campaign" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ 'Add campaign' if mode == 'create' else 'Edit campaign' }}</h1>
+    <div class="text-secondary">Create or update the campaign metadata and embedding settings.</div>
+  </div>
+  <div>
+    <a class="btn btn-outline-secondary" href="/ui/campaigns">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="{% if mode == 'create' %}/ui/campaigns/new{% else %}/ui/campaigns/{{ campaign_id }}/edit{% endif %}">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Name</label>
+          <input class="form-control" name="name" required value="{{ campaign.name }}" placeholder="e.g. Blue Moon" />
+          <div class="form-text">Must be unique.</div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">System</label>
+          <select class="form-select" name="system" required>
+            <option value="v5" {% if campaign.system == 'v5' %}selected{% endif %}>Vampire V5</option>
+            <option value="dnd5e" {% if campaign.system == 'dnd5e' %}selected{% endif %}>DnD 5e</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Embedding dim</label>
+          <input class="form-control" type="number" min="1" name="embedding_dim" value="{{ campaign.embedding_dim }}" />
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" rows="2" name="description" placeholder="Short description (optional)">{{ campaign.description }}</textarea>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Embedding model</label>
+          <input class="form-control" name="embedding_model" value="{{ campaign.embedding_model }}" placeholder="e.g. nomic-embed-text" />
+          <div class="form-text">Used later when we add embedding + vector search.</div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Config (JSON)</label>
+          <textarea class="form-control mono" rows="8" name="config_json" spellcheck="false">{{ campaign.config }}</textarea>
+          <div class="form-text">Any extra per-campaign config you want to store (timezone, house rules, etc.).</div>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+          <button class="btn btn-primary" type="submit">
+            <i class="bi bi-check2"></i> {{ 'Create' if mode == 'create' else 'Save changes' }}
+          </button>
+          <a class="btn btn-outline-secondary" href="/ui/campaigns">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,33 +1,40 @@
 services:
-  pg:
-    image: pgvector/pgvector:0.8.1-pg18-trixie
-    container_name: rag_pg18
-    #restart: unless-stopped
-
+  db:
+    image: pgvector/pgvector:pg18
+    container_name: rpgkb-db
     environment:
-      POSTGRES_DB: ragkb
-      POSTGRES_USER: rag
-      POSTGRES_PASSWORD: ragpass
-      # Explicit, matches Postgres 18+ default in the official image family
-      PGDATA: /var/lib/postgresql/18/docker
-
-    ports:
-      - "5432:5432"
-
+      POSTGRES_DB: rpgkb
+      POSTGRES_USER: rpg
+      POSTGRES_PASSWORD: rpg
     volumes:
-      # Postgres 18 image family: mount the parent volume dir
       - pgdata:/var/lib/postgresql
-      # init scripts run on first boot (empty data dir)
-      - ./db/init:/docker-entrypoint-initdb.d:ro
-
+      - ./docker/postgres/initdb.d:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U rpg -d rpgkb"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
+    #restart: unless-stopped
 
-#extra_hosts:
-#  - "host.docker.internal:host-gateway"
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rpgkb-api
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://rpg:rpg@db:5432/rpgkb}
+      APP_ENV: prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    #restart: unless-stopped
 
 volumes:
   pgdata:

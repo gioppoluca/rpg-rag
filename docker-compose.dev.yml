@@ -1,0 +1,56 @@
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    container_name: rpgkb-db
+    environment:
+      POSTGRES_DB: rpgkb
+      POSTGRES_USER: rpg
+      POSTGRES_PASSWORD: rpg
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18+ expects volume targeted at /var/lib/postgresql
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/initdb.d:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rpg -d rpgkb"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  api:
+    image: python:3.12-bookworm
+    container_name: rpgkb-api-dev
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Good default for Windows/Mac; on Linux we also map host-gateway below
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://rpg:rpg@db:5432/rpgkb}
+      PYTHONPATH: /app
+      APP_ENV: dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - venv:/opt/venv
+      - pipcache:/root/.cache/pip
+    command: >
+      bash -lc "
+        python -m venv /opt/venv &&
+        source /opt/venv/bin/activate &&
+        pip install -U pip &&
+        pip install -r requirements-dev.txt &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+volumes:
+  pgdata:
+  venv:
+  pipcache:
