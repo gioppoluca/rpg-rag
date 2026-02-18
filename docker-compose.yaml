@@ -1,0 +1,30 @@
+services:
+  pg:
+    image: pgvector/pgvector:0.8.1-pg18-trixie
+    container_name: rag_pg18
+    #restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ragkb
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: ragpass
+      # Explicit, matches Postgres 18+ default in the official image family
+      PGDATA: /var/lib/postgresql/18/docker
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      # Postgres 18 image family: mount the parent volume dir
+      - pgdata:/var/lib/postgresql
+      # init scripts run on first boot (empty data dir)
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
