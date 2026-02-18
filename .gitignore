@@ -1,0 +1,37 @@
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.python-version
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+build/
+dist/
+*.egg-info/
+
+# Secret / Environment Variables
+# ALWAYS ignore these to prevent leaking API keys or DB credentials
+.env
+.flaskenv
+
+# Database
+*.db
+*.sqlite3
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
